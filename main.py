@@ -19,6 +19,40 @@ def read_entries():
         entries = raw.split("\n\n")
         return entries
 
+def sorted_achievement():
+    entries = read_entries()
+
+    if not entries:
+        print(Fore.YELLOW + "There are no entries yet.")
+        return
+
+    def extract_date(entry):
+        lines = entry.strip().split("\n")
+        if lines:
+            date_str = lines[0].strip("[]")
+            try:
+                return datetime.strptime(date_str, "%d.%m.%Y")
+            except ValueError:
+                return datetime.min
+        return datetime.min
+
+    entries.sort(key=extract_date)
+
+    print(Style.BRIGHT + "\n***SORTED ENTRIES***\n")
+
+    for entry in entries:
+        lines = entry.strip().split("\n")
+        if not lines:
+            continue
+        date_line = lines[0]
+        content_lines = lines[1:]
+        print(Fore.CYAN + date_line)
+        for line in content_lines:
+            print(Fore.WHITE + line)
+
+        print()
+
+
 def add_achievement():
     date = input("Enter a date (or press ENTER for today): ").strip()
     if not date:
@@ -38,7 +72,7 @@ def add_achievement():
     print(Fore.GREEN + "Saved")
 
 def search_achievements():
-    print(Style.BRIGHT + "\n*** SEARCH ***")
+    print(Style.BRIGHT + "\n***SEARCH***")
     keyword = input("Enter a word to search: ").strip()
 
     if keyword:
@@ -112,12 +146,13 @@ def view_achievements():
     
 def main():
     while True:
-        print(Style.BRIGHT + "*** ACHIEVEMENT DIARY ***")
+        print(Style.BRIGHT + "***ACHIEVEMENT DIARY***")
         print("1 - Add achievement")
         print("2 - View achievements")
         print("3 - Search achievements")
         print("4 - Delete entry")
-        print("5 - Exit")
+        print("5 - Sorted achievements")
+        print("6 - Exit")
 
         choice = input(Style.BRIGHT + "Enter choice: ")
 
@@ -134,10 +169,14 @@ def main():
             delete_entries()
 
         elif choice == "5":
+            sorted_achievement()
+
+        elif choice == "6":
             print("BYE")
             break
         else:
             print(Fore.RED + "Wrong input.")
+
 
 
 if __name__ == "__main__":
