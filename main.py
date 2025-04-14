@@ -1,6 +1,8 @@
 import os
 from datetime import datetime
 from colorama import init, Fore, Style
+import csv
+import shutil
 
 init(autoreset=True)
 
@@ -18,6 +20,32 @@ def read_entries():
         raw = file.read().strip()
         entries = raw.split("\n\n")
         return entries
+
+def export_to_csv():
+    entries = read_entries()
+    if not entries:
+        print(Fore.YELLOW + "No entries to export.")
+        return
+
+    with open("achievement.csv", "w", encoding="utf-8", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["Date", "Achievement"])
+
+        for entry in entries:
+            lines = entry.strip().split("\n")
+            if not lines:
+                continue
+            date = lines[0].strip("[]")
+            text = " ".join(lines[1:])
+            writer.writerow([date, text])
+    print(Fore.GREEN + "Achievements exported to achievements.csv")
+
+
+def backup_file():
+    if os.path.exists(file_ach):
+        backup_name = f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        shutil.copy(file_ach, backup_name)
+        print(Fore.YELLOW + f"Backup created: {backup_name}")
 
 def sorted_achievement():
     entries = read_entries()
@@ -152,7 +180,8 @@ def main():
         print("3 - Search achievements")
         print("4 - Delete entry")
         print("5 - Sorted achievements")
-        print("6 - Exit")
+        print("6 - Export to CSV")
+        print("7 - Exit")
 
         choice = input(Style.BRIGHT + "Enter choice: ")
 
@@ -172,6 +201,9 @@ def main():
             sorted_achievement()
 
         elif choice == "6":
+            export_to_csv()
+
+        elif choice == "7":
             print("BYE")
             break
         else:
