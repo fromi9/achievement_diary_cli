@@ -3,6 +3,8 @@ from datetime import datetime
 from colorama import init, Fore, Style
 import csv
 import shutil
+import tkinter as tk
+from tkinter import messagebox, simpledialog
 
 init(autoreset=True)
 
@@ -54,7 +56,8 @@ def sorted_achievement():
         print(Fore.YELLOW + "There are no entries yet.")
         return
 
-    def extract_date(entry):
+    def extract_date(entry: str) -> datetime:
+
         lines = entry.strip().split("\n")
         if lines:
             date_str = lines[0].strip("[]")
@@ -79,7 +82,6 @@ def sorted_achievement():
             print(Fore.WHITE + line)
 
         print()
-
 
 def add_achievement():
     date = input("Enter a date (or press ENTER for today): ").strip()
@@ -171,6 +173,138 @@ def view_achievements():
             print(Fore.WHITE + line)
         print()
 
+def gui_add_achievement():
+    date = simpledialog.askstring("Date", "Enter date (dd.mm.yyyy):")
+    if not date:
+        date = datetime.now().strftime("%d.%m.%Y")
+    text = simpledialog.askstring("Achievement", "What did you do today?")
+    if text:
+        save_entry(date, text)
+        messagebox.showinfo("Saved", "Achievement saved successfully!")
+
+def gui_view_achievements():
+    entries = read_entries()
+
+    if not entries:
+        messagebox.showinfo("No Entries", "There are no achievements yet.")
+        return
+
+    window = tk.Toplevel()
+    window.title("All Achievements")
+
+    text_widget = tk.Text(window, wrap="word", width=60, height=25)
+    text_widget.pack(padx=10, pady=10)
+
+    for entry in entries:
+        text_widget.insert(tk.END, entry + "\n" + "-" * 40 + "\n")
+
+    text_widget.config(state="disabled")
+
+def gui_search_achievement():
+    keyword = simpledialog.askstring("Search", "Enter keyword to search:")
+    if not keyword:
+        return
+
+    entries = read_entries()
+    matches = [entry for entry in entries if keyword.lower() in entry.lower()]
+
+    if matches:
+        window = tk.Toplevel()
+        window.title("Search Results")
+
+        text_widget = tk.Text(window, wrap="word", width=60, height=25)
+        text_widget.pack(padx=10, pady=10)
+
+        for match in matches:
+            text_widget.insert(tk.END, match + "\n" + "-" * 40 + "\n")
+
+        text_widget.config(state="disabled")
+    else:
+        messagebox.showinfo("No Results", "No matching entries found.")
+
+
+def gui_deleted_achievement():
+    entries = read_entries()
+
+    if not entries:
+        messagebox.showinfo("No Entries", "There are no achievements to delete.")
+        return
+
+    window = tk.Toplevel()
+    window.title("Delete Entry")
+
+    tk.Label(window, text="Select an entry to delete:", font=("Arial", 12)).pack(pady=5)
+
+    listbox = tk.Listbox(window, width=80, height=20)
+    listbox.pack(padx=10, pady=5)
+
+    for i, entry in enumerate(entries):
+        preview = entry.split("\n")[0] + "..." if entry else "No preview"
+        listbox.insert(tk.END, f"{i}: {preview}")
+
+    def delete_selected():
+        selected = listbox.curselection()
+        if not selected:
+            return
+        index = selected[0]
+        updated_entries = [e for i, e in enumerate(entries) if i != index]
+
+        with open(file_ach, "w", encoding="utf-8") as f:
+            f.write("\n\n".join(updated_entries) + "\n")
+
+        messagebox.showinfo("Deleted", "Entry deleted successfully.")
+        window.destroy()
+
+    tk.Button(window, text="Delete Selected", command=delete_selected).pack(pady=5)
+
+
+def gui_sorted_achievement():
+    entries = read_entries()
+
+    if not entries:
+        messagebox.showinfo("No Entries", "There are no achievements yet.")
+        return
+
+    def extract_date(entry):
+        lines = entry.strip().split("\n")
+        if lines:
+            try:
+                return datetime.strptime(lines[0].strip("[]"), "%d.%m.%Y")
+            except ValueError:
+                return datetime.min
+        return datetime.min
+
+    entries.sort(key=extract_date)
+
+    window = tk.Toplevel()
+    window.title("Sorted Achievements")
+
+    text_widget = tk.Text(window, wrap="word", width=60, height=25)
+    text_widget.pack(padx=10, pady=10)
+
+    for entry in entries:
+        text_widget.insert(tk.END, entry + "\n" + "-" * 40 + "\n")
+
+    text_widget.config(state="disabled")
+
+
+
+def start_gui():
+    root = tk.Tk()
+    root.title("Achievement Diary")
+    
+    tk.Label(root, text="Achievement Diary", font=("Arial", 16)).pack(pady=10)
+
+    tk.Button(root, text="Add Achievement", width=30, command=gui_add_achievement).pack(pady=5)
+    tk.Button(root, text="View achievements", width=30, command=gui_view_achievements).pack(pady=5)
+    tk.Button(root, text="Search achievements",width=30, command=gui_search_achievement).pack(pady=5)
+    tk.Button(root, text="Delete entry", width=30, command=gui_deleted_achievement).pack(pady=5)
+    tk.Button(root, text="Sorted achievements", width=30, command=gui_sorted_achievement).pack(pady=5)
+    tk.Button(root, text="Export to CSV", width=30, command=export_to_csv).pack(pady=5)
+    tk.Button(root, text="Exit", width=30, command=root.quit).pack(pady=5)
+
+    root.mainloop()
+
     
 def main():
     while True:
@@ -210,6 +344,5 @@ def main():
             print(Fore.RED + "Wrong input.")
 
 
-
 if __name__ == "__main__":
-    main()    
+    start_gui()   
